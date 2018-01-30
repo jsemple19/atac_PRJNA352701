@@ -1,2 +1,0 @@
-make: fastq-dump: Command not found
-make: *** [fastq/SRR5000682.fastq.gz] Error 127

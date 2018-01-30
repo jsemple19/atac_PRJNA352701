@@ -1,2 +1,0 @@
-mkdir -p fastq
-fastq-dump -O fastq -X 1000 --split-files --gzip SRR5000682
