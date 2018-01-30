@@ -13,6 +13,7 @@
 #BSUB -J array[1-3]
 
 
+module dd UHTS/Analysis/sratoolkit/2.8.2.1;	#fastq-dump
 module add UHTS/Quality_control/fastqc/0.11.5      #fastqc
 module add UHTS/Quality_control/cutadapt/1.13     #cutadapt
 module add UHTS/Aligner/bwa/0.7.15                 #bwa
