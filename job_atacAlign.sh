@@ -1,13 +1,16 @@
 #!/bin/bash
 
 #BSUB -L /bin/bash
-#BSUB -o atacAlign-output.txt
-#BSUB -e atacAlign-error.txt
+#BSUB -o atacAlign-output_%J_%I.txt
+#BSUB -e atacAlign-error_%J_%I.txt
 #BSUB -J atacAlign
 #BSUB -u jennifer.semple@izb.unibe.ch
 #BSUB -N
-#BSUB -n 3
-#BSUB -R "span[ptile=
+##BSUB -n 3
+##BSUB -R "span[ptile=4]"
+##BSUB –R "rusage[mem=4096]"
+##BSUB -M 4194304
+#BSUB -J array[1-3]
 
 
 module add UHTS/Quality_control/fastqc/0.11.5      #fastqc
@@ -20,13 +23,16 @@ module add UHTS/Analysis/BEDTools/2.26.0        #bedToBam
 module add UHTS/Analysis/macs/2.1.1.20160309;    #macs2
 
 #before running script, make directory on scratch
-dataDir=/scratch/cluster/weekly/jsemple/public/atac
+dataDir=/scratch/cluster/weekly/jsemple/publicData/atac_PRJNA352701
 scriptDir=/home/jsemple/publicData/atac_PRJNA352701
 mkdir -p $dataDir
 #go to the scratch directory and copy script from home directory and run from there
 cd $dataDir
-cp ${scriptDir}/Makefile
-cp ${scriptDir}/Tn5shift.sh
+cp ${scriptDir}/Makefile $dataDir/
+cp ${scriptDir}/Tn5shift.sh $dataDir/
 
-make -j 3 all
+SRRlist=(SRR5000676 SRR5000679 SRR5000682)
+let i=${LSB_JOBINDEX}-1
+SRRfile=${SRRlist[$i]}
 
+make SRR=${SRRfile} all

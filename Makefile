@@ -2,7 +2,7 @@
 ## required software: fastqc, cutadapt, bwa, samtools, picard, qualimap, macs2peaks
 
 ########### VARIABLES #########
-SRR := SRR5000676 SRR5000679 SRR5000682
+#SRR := SRR5000676 SRR5000679 SRR5000682
 
 # make list of input fastq files based on SRR accession
 fastqFiles := $(addsuffix .fastq.gz,$(addprefix fastq/,$(SRR)))
@@ -35,9 +35,7 @@ intermediateFiles := $(addprefix aln/, $(addsuffix .sam, $(SRR))) \
 secondaryFiles := $(addprefix aln/, $(addsuffix .noMito.bam, $(SRR)))
 
 # reference geneme file location
-genomefile:=/Users/semple/Documents/MeisterLab/GenomeVer/sequence/c_elegans.PRJNA13758.WS250.genomic.fa
-
-
+genomefile:=/home/jsemple/publicData/genomeVer/sequence/c_elegans.PRJNA13758.WS250.genomic.fa
 
 ########### RECIPES ##########
 all:  $(fastqFiles) $(OBJECTS)
@@ -58,7 +56,7 @@ clean:
 #download reads from SRA
 $(fastqFiles):
 	mkdir -p fastq
-	fastq-dump -O fastq -X 1000000 --split-files --gzip $(SRR)
+	fastq-dump -O fastq -X 1000 --split-files --gzip $(SRR)
 	echo "Data downloaded:" > fastq/logfile
 	date >>fastq/logfile
 	echo $(SRR) >>fastq/logfile
@@ -93,15 +91,15 @@ aln/report_%_stats.txt: aln/%.sorted.bam
 
 # find duplicates with picard  (path to picard should be set in $PICARD variable in .bash_profile or in session)
 aln/%.noDup.bam aln/report_%_picard.txt: aln/%.sorted.bam $(PICARD)
-	java -Xmx5g -jar $(PICARD) MarkDuplicates I=aln/$*.sorted.bam O=aln/$*.noDup.bam M=aln/report_$*_picard.txt
+	java -Xmx5g -jar picard.jar  MarkDuplicates I=aln/$*.sorted.bam O=aln/$*.noDup.bam M=aln/report_$*_picard.txt
 
 # Get insert size statistics and plots with picard and qualimap (set path to $QUALIMAP in .bash_profile)
 aln/report_picard_%_insert_size_metrics.txt aln/report_picard_%_insert_size_histogram.pdf \
-aln/report_qualimap_%.pdf: aln/%.noDup.bam ${PICARD} ${QUALIMAP}
-	java -jar ${PICARD} CollectInsertSizeMetrics I=aln/$*.noDup.bam \
+aln/report_qualimap_%.pdf: aln/%.noDup.bam 
+	java -jar picard.jar CollectInsertSizeMetrics I=aln/$*.noDup.bam \
        O=aln/report_picard_$*_insert_size_metrics.txt \
        H=aln/report_picard_$*_insert_size_histogram.pdf
-	${QUALIMAP} bamqc -bam aln/$*.noDup.bam -c -outdir aln -outfile report_qualimap_$*.pdf -outformat PDF
+	qualimap bamqc -bam aln/$*.noDup.bam -c -outdir aln -outfile report_qualimap_$*.pdf -outformat PDF
 
 
 # 	remove duplicate and mitochondrial reads
@@ -117,7 +115,5 @@ aln/%.Tn5shifted.bed: aln/%.noMito.bam
 # call peaks with macs2peaks (need to activate conda python 2.7 emvironment. you need to invoke bash shell and )
 macs2peaks/%_peaks.narrowPeak macs2peaks/%_peaks.xls macs2peaks/%_summits.bed: aln/%.Tn5shifted.bed
 	mkdir -p ./macs2peaks
-	( bash -c "source ${HOME}/anaconda/bin/activate py27; \
-		macs2 callpeak -t aln/$*.Tn5shifted.bed -f BED -n macs2peaks/$* -g 9e7  \
-		--nomodel --extsize 150 --shift -75 -B --keep-dup all --call-summits" )
-
+	( bash -c "source macs2 callpeak -t aln/$*.Tn5shifted.bed -f BED -n macs2peaks/$* \
+	-g 9e7 --nomodel --extsize 150 --shift -75 -B --keep-dup all --call-summits" )
