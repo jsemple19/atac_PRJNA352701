@@ -4,6 +4,8 @@
 ########### VARIABLES #########
 #SRR := SRR5000676 SRR5000679 SRR5000682
 
+PICARD:=/software/UHTS/Analysis/picard-tools/2.9.0/bin/picard.jar
+
 # make list of input fastq files based on SRR accession
 fastqFiles := $(addsuffix .fastq.gz,$(addprefix fastq/,$(SRR)))
 
@@ -23,7 +25,10 @@ OBJECTS := \
  	$(addsuffix .pdf, $(addprefix aln/report_qualimap_,$(SRR))) 
 
 # list of intermediate files to be deleted at end of run
-intermediateFiles := $(addprefix aln/, $(addsuffix .sam, $(SRR))) \
+intermediateFiles := \
+	$(addsuffix _1.fastq.gz, $(addprefix fastq/,$(SRR))) \
+        $(addsuffix _2.fastq.gz, $(addprefix fastq/,$(SRR))) \
+	$(addprefix aln/, $(addsuffix .sam, $(SRR))) \
 	$(addprefix aln/, $(addsuffix .noDup.bam, $(SRR))) \
 	$(addprefix aln/, $(addsuffix .sorted.bam, $(SRR))) \
 	$(addprefix cutadapt/, $(addsuffix _1.fastq.gz, $(SRR))) \
@@ -48,7 +53,6 @@ cleanall:
 	rm -f $(OBJECTS)
 	rm -f $(intermediateFiles)
 	rm -f $(secondaryFiles)
-	rm -f fastq/*
 	
 clean:
 	rm -f $(intermediateFiles)
@@ -56,10 +60,10 @@ clean:
 #download reads from SRA
 $(fastqFiles):
 	mkdir -p fastq
-	fastq-dump -O fastq -X 1000 --split-files --gzip $(SRR)
-	echo "Data downloaded:" > fastq/logfile
+	fastq-dump -O fastq --split-files --gzip $(SRR)
+	echo "Data downloaded:" >> fastq/logfile
 	date >>fastq/logfile
-	echo $(SRR) >>fastq/logfile
+	echo $(SRR) >>fastq/logfile_${SRR}_.txt
 	touch $@
 	
 # run fastqc on downloaded sequences
@@ -91,12 +95,12 @@ aln/report_%_stats.txt: aln/%.sorted.bam
 
 # find duplicates with picard  (path to picard should be set in $PICARD variable in .bash_profile or in session)
 aln/%.noDup.bam aln/report_%_picard.txt: aln/%.sorted.bam $(PICARD)
-	java -Xmx5g -jar picard.jar  MarkDuplicates I=aln/$*.sorted.bam O=aln/$*.noDup.bam M=aln/report_$*_picard.txt
+	java -Xmx5g -jar ${PICARD}  MarkDuplicates I=aln/$*.sorted.bam O=aln/$*.noDup.bam M=aln/report_$*_picard.txt
 
 # Get insert size statistics and plots with picard and qualimap (set path to $QUALIMAP in .bash_profile)
 aln/report_picard_%_insert_size_metrics.txt aln/report_picard_%_insert_size_histogram.pdf \
 aln/report_qualimap_%.pdf: aln/%.noDup.bam 
-	java -jar picard.jar CollectInsertSizeMetrics I=aln/$*.noDup.bam \
+	java -jar ${PICARD}  CollectInsertSizeMetrics I=aln/$*.noDup.bam \
        O=aln/report_picard_$*_insert_size_metrics.txt \
        H=aln/report_picard_$*_insert_size_histogram.pdf
 	qualimap bamqc -bam aln/$*.noDup.bam -c -outdir aln -outfile report_qualimap_$*.pdf -outformat PDF
@@ -115,5 +119,5 @@ aln/%.Tn5shifted.bed: aln/%.noMito.bam
 # call peaks with macs2peaks (need to activate conda python 2.7 emvironment. you need to invoke bash shell and )
 macs2peaks/%_peaks.narrowPeak macs2peaks/%_peaks.xls macs2peaks/%_summits.bed: aln/%.Tn5shifted.bed
 	mkdir -p ./macs2peaks
-	( bash -c "source macs2 callpeak -t aln/$*.Tn5shifted.bed -f BED -n macs2peaks/$* \
-	-g 9e7 --nomodel --extsize 150 --shift -75 -B --keep-dup all --call-summits" )
+	macs2 callpeak -t aln/$*.Tn5shifted.bed -f BED -n macs2peaks/$* \
+	-g 9e7 --nomodel --extsize 150 --shift -75 -B --keep-dup all --call-summits
