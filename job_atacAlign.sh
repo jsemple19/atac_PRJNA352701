@@ -8,8 +8,8 @@
 #BSUB -N
 ##BSUB -n 3
 ##BSUB -R "span[ptile=4]"
-##BSUB –R "rusage[mem=4096]"
-##BSUB -M 4194304
+#BSUB –R "rusage[mem=8192]" ## in Mb
+#BSUB -M 8388608 ## in kb 
 #BSUB -J array[1-3]
 
 
@@ -22,6 +22,7 @@ module add UHTS/Analysis/picard-tools/2.9.0        #picard.jar
 module add UHTS/Quality_control/qualimap/2.2.1    #qualimap.jar
 module add UHTS/Analysis/BEDTools/2.26.0        #bedToBam
 module add UHTS/Analysis/macs/2.1.1.20160309;    #macs2
+module add R/3.4.2; #Rscript
 
 #before running script, make directory on scratch
 dataDir=/scratch/cluster/weekly/jsemple/publicData/atac_PRJNA352701

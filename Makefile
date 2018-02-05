@@ -30,14 +30,14 @@ intermediateFiles := \
         $(addsuffix _2.fastq.gz, $(addprefix fastq/,$(SRR))) \
 	$(addprefix aln/, $(addsuffix .sam, $(SRR))) \
 	$(addprefix aln/, $(addsuffix .noDup.bam, $(SRR))) \
-	$(addprefix aln/, $(addsuffix .sorted.bam, $(SRR))) \
+	$(addprefix aln/, $(addsuffix .noMito.bam, $(SRR))) \
 	$(addprefix cutadapt/, $(addsuffix _1.fastq.gz, $(SRR))) \
 	$(addprefix cutadapt/, $(addsuffix _2.fastq.gz, $(SRR))) \
 	$(addprefix aln/, $(addsuffix .bed, $(SRR))) \
 	$(addprefix aln/, $(addsuffix .Tn5shifted.bed, $(SRR)))  
 
 # list secondary files to keep
-secondaryFiles := $(addprefix aln/, $(addsuffix .noMito.bam, $(SRR)))
+secondaryFiles := $(addprefix aln/, $(addsuffix .sorted.bam, $(SRR)))
 
 # reference geneme file location
 genomefile:=/home/jsemple/publicData/genomeVer/sequence/c_elegans.PRJNA13758.WS250.genomic.fa
